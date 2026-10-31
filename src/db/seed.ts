@@ -6,6 +6,7 @@ import { loadEnvConfig } from "@next/env";
 import { sql } from "drizzle-orm";
 import { type ExistingVisit, validateVisit } from "../domain/scheduling";
 import { addDays, parseTime, toTimestamp } from "../domain/time";
+import { closeDb, getDb } from "./client";
 import { sites, technicians, visits } from "./schema";
 
 loadEnvConfig(process.cwd());
@@ -80,14 +81,11 @@ function workday(firstWorkday: string, offset: number): string {
 }
 
 async function main() {
-  // Se importa después de cargar .env.local, que es de donde sale DATABASE_URL.
-  const { db, pool } = await import("./client");
-
   let firstWorkday = todayInMadrid();
   while (isWeekend(firstWorkday)) firstWorkday = addDays(firstWorkday, 1);
 
   try {
-    await db.transaction(async (tx) => {
+    await getDb().transaction(async (tx) => {
       await tx.execute(sql`TRUNCATE visits, sites, technicians RESTART IDENTITY CASCADE`);
       const techRows = await tx.insert(technicians).values(TECHNICIANS).returning();
       const siteRows = await tx.insert(sites).values(SITES).returning();
@@ -138,7 +136,7 @@ async function main() {
         `${VISITS.length} visitas (a partir del ${firstWorkday}).`,
     );
   } finally {
-    await pool.end();
+    await closeDb();
   }
 }
 

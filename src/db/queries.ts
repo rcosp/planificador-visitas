@@ -2,7 +2,7 @@ import { and, asc, eq, gte, lt } from "drizzle-orm";
 import { connection } from "next/server";
 import type { ExistingVisit } from "@/domain/scheduling";
 import { addDays, fromTimestamp } from "@/domain/time";
-import { db } from "./client";
+import { getDb } from "./client";
 import { sites, technicians, visits } from "./schema";
 
 // Las funciones de lectura que usan las páginas llaman a connection(): los
@@ -11,12 +11,12 @@ import { sites, technicians, visits } from "./schema";
 
 export async function listTechnicians() {
   await connection();
-  return db.select().from(technicians).orderBy(asc(technicians.name));
+  return getDb().select().from(technicians).orderBy(asc(technicians.name));
 }
 
 export async function listSites() {
   await connection();
-  return db.select().from(sites).orderBy(asc(sites.municipality), asc(sites.name));
+  return getDb().select().from(sites).orderBy(asc(sites.municipality), asc(sites.name));
 }
 
 export interface VisitFilters {
@@ -28,7 +28,7 @@ export type VisitRow = Awaited<ReturnType<typeof listVisits>>[number];
 
 export async function listVisits({ technicianId, date }: VisitFilters) {
   await connection();
-  return db
+  return getDb()
     .select({
       id: visits.id,
       startsAt: visits.startsAt,
@@ -56,7 +56,7 @@ export async function getTechnicianAgenda(
   technicianId: number,
   date: string,
 ): Promise<ExistingVisit[]> {
-  const rows = await db
+  const rows = await getDb()
     .select({
       id: visits.id,
       technicianId: visits.technicianId,

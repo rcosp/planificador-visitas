@@ -4,7 +4,7 @@ import { and, eq, sql } from "drizzle-orm";
 import { refresh, revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { db } from "@/db/client";
+import { getDb } from "@/db/client";
 import { getTechnicianAgenda } from "@/db/queries";
 import { sites, technicians, visits } from "@/db/schema";
 import {
@@ -67,8 +67,8 @@ export async function createVisit(
   const { siteId, technicianId, date, startTime, durationMinutes } = parsed.data;
 
   const [technician, site] = await Promise.all([
-    db.select({ id: technicians.id }).from(technicians).where(eq(technicians.id, technicianId)),
-    db.select({ id: sites.id }).from(sites).where(eq(sites.id, siteId)),
+    getDb().select({ id: technicians.id }).from(technicians).where(eq(technicians.id, technicianId)),
+    getDb().select({ id: sites.id }).from(sites).where(eq(sites.id, siteId)),
   ]);
   if (technician.length === 0 || site.length === 0) {
     return {
@@ -88,7 +88,7 @@ export async function createVisit(
 
   let visitId: number;
   try {
-    const [row] = await db
+    const [row] = await getDb()
       .insert(visits)
       .values({
         technicianId,
@@ -112,7 +112,7 @@ export async function cancelVisit(visitId: number): Promise<{ error?: string }> 
   const id = z.number().int().positive().safeParse(visitId);
   if (!id.success) return { error: "Visita no válida." };
 
-  const updated = await db
+  const updated = await getDb()
     .update(visits)
     .set({ status: "cancelled", cancelledAt: sql`now()` })
     .where(and(eq(visits.id, id.data), eq(visits.status, "scheduled")))
