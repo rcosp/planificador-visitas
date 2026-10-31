@@ -1,11 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { type ChangeEvent, type FormEvent, startTransition, useActionState, useState } from "react";
+import {
+  type ChangeEvent,
+  type FormEvent,
+  startTransition,
+  useActionState,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { RULE_LABELS } from "@/domain/scheduling";
 import { formatMinutes, parseTime } from "@/domain/time";
 import { buttonPrimary, buttonSecondary, cardClass, inputClass, labelClass } from "@/lib/styles";
 import { createVisit, type VisitField, type VisitFormValues } from "../actions";
+
+const subscribeNothing = () => () => {};
 
 interface Props {
   technicians: { id: number; name: string }[];
@@ -22,10 +31,14 @@ export function VisitForm({ technicians, sites, initialValues }: Props) {
     (field: VisitField) => (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
       setValues((current) => ({ ...current, [field]: event.target.value }));
 
+  // false en el HTML del servidor y true una vez hidratado el formulario.
+  const hydrated = useSyncExternalStore(subscribeNothing, () => true, () => false);
+
   // Con <form action={...}> React 19 resetea el formulario al terminar la
   // acción y los <select> controlados se quedan en blanco aunque el estado
-  // conserve su valor. Se envía a mano para evitar ese reseteo; `action` se
-  // mantiene para que el formulario funcione también sin JavaScript.
+  // conserve su valor, así que se envía a mano. Hasta que React se hidrata el
+  // botón está desactivado: el envío nativo, sin JavaScript, devuelve una
+  // página en blanco en producción con Partial Prerendering.
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
@@ -61,7 +74,7 @@ export function VisitForm({ technicians, sites, initialValues }: Props) {
   const end = start !== null && Number.isInteger(duration) && duration > 0 ? start + duration : null;
 
   return (
-    <form action={formAction} onSubmit={handleSubmit} className={`${cardClass} space-y-5 p-6`}>
+    <form onSubmit={handleSubmit} className={`${cardClass} space-y-5 p-6`}>
       {state.violations && state.violations.length > 0 && (
         <div role="alert" className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-900">
           <p className="font-medium">No se puede guardar la visita porque no cumple estas reglas:</p>
@@ -137,7 +150,7 @@ export function VisitForm({ technicians, sites, initialValues }: Props) {
       </div>
 
       <div className="flex flex-wrap gap-3 border-t border-slate-100 pt-5">
-        <button type="submit" disabled={pending} className={buttonPrimary}>
+        <button type="submit" disabled={pending || !hydrated} className={buttonPrimary}>
           {pending ? "Guardando…" : "Programar visita"}
         </button>
         <Link href="/visitas" className={buttonSecondary}>
