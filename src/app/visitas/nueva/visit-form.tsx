@@ -1,0 +1,134 @@
+"use client";
+
+import Link from "next/link";
+import { type ChangeEvent, useActionState, useState } from "react";
+import { RULE_LABELS } from "@/domain/scheduling";
+import { formatMinutes, parseTime } from "@/domain/time";
+import { buttonPrimary, buttonSecondary, cardClass, inputClass, labelClass } from "@/lib/styles";
+import { createVisit, type VisitField, type VisitFormValues } from "../actions";
+
+interface Props {
+  technicians: { id: number; name: string }[];
+  sites: { id: number; name: string; municipality: string }[];
+  initialValues: VisitFormValues;
+}
+
+export function VisitForm({ technicians, sites, initialValues }: Props) {
+  const [state, formAction, pending] = useActionState(createVisit, { values: initialValues });
+  // Campos controlados: conservan lo escrito cuando el servidor rechaza la visita.
+  const [values, setValues] = useState(initialValues);
+
+  const update =
+    (field: VisitField) => (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+      setValues((current) => ({ ...current, [field]: event.target.value }));
+
+  const fieldProps = (field: VisitField) => ({
+    id: field,
+    name: field,
+    value: values[field],
+    onChange: update(field),
+    required: true,
+    "aria-invalid": state.fieldErrors?.[field] ? true : undefined,
+    "aria-describedby": state.fieldErrors?.[field] ? `${field}-error` : undefined,
+    className: inputClass,
+  });
+
+  const start = parseTime(values.startTime);
+  const duration = Number(values.durationMinutes);
+  const end = start !== null && Number.isInteger(duration) && duration > 0 ? start + duration : null;
+
+  return (
+    <form action={formAction} className={`${cardClass} space-y-5 p-6`}>
+      {state.violations && state.violations.length > 0 && (
+        <div role="alert" className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-900">
+          <p className="font-medium">No se puede guardar la visita porque no cumple estas reglas:</p>
+          <ul className="mt-2 list-disc space-y-1 pl-5">
+            {state.violations.map((violation, index) => (
+              <li key={index}>
+                <strong>{RULE_LABELS[violation.rule]}.</strong> {violation.message}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <div className="grid gap-5 sm:grid-cols-2">
+        <div className="sm:col-span-2">
+          <label htmlFor="siteId" className={labelClass}>
+            Obra
+          </label>
+          <select {...fieldProps("siteId")}>
+            <option value="">Elige una obra</option>
+            {sites.map((site) => (
+              <option key={site.id} value={site.id}>
+                {site.name} — {site.municipality}
+              </option>
+            ))}
+          </select>
+          <FieldError field="siteId" message={state.fieldErrors?.siteId} />
+        </div>
+
+        <div className="sm:col-span-2">
+          <label htmlFor="technicianId" className={labelClass}>
+            Técnico
+          </label>
+          <select {...fieldProps("technicianId")}>
+            <option value="">Elige un técnico</option>
+            {technicians.map((technician) => (
+              <option key={technician.id} value={technician.id}>
+                {technician.name}
+              </option>
+            ))}
+          </select>
+          <FieldError field="technicianId" message={state.fieldErrors?.technicianId} />
+        </div>
+
+        <div>
+          <label htmlFor="date" className={labelClass}>
+            Fecha
+          </label>
+          <input type="date" {...fieldProps("date")} />
+          <FieldError field="date" message={state.fieldErrors?.date} />
+        </div>
+
+        <div>
+          <label htmlFor="startTime" className={labelClass}>
+            Hora de inicio
+          </label>
+          <input type="time" {...fieldProps("startTime")} />
+          <FieldError field="startTime" message={state.fieldErrors?.startTime} />
+        </div>
+
+        <div>
+          <label htmlFor="durationMinutes" className={labelClass}>
+            Duración (minutos)
+          </label>
+          <input type="number" min={1} step={1} inputMode="numeric" {...fieldProps("durationMinutes")} />
+          <FieldError field="durationMinutes" message={state.fieldErrors?.durationMinutes} />
+        </div>
+
+        <p className="self-end pb-2 text-sm text-slate-600" aria-live="polite">
+          {end !== null && end < 24 * 60 && `Terminaría a las ${formatMinutes(end)}.`}
+        </p>
+      </div>
+
+      <div className="flex flex-wrap gap-3 border-t border-slate-100 pt-5">
+        <button type="submit" disabled={pending} className={buttonPrimary}>
+          {pending ? "Guardando…" : "Programar visita"}
+        </button>
+        <Link href="/visitas" className={buttonSecondary}>
+          Volver al listado
+        </Link>
+      </div>
+    </form>
+  );
+}
+
+function FieldError({ field, message }: { field: VisitField; message?: string }) {
+  if (!message) return null;
+  return (
+    <p id={`${field}-error`} className="mt-1 text-xs text-red-700">
+      {message}
+    </p>
+  );
+}
