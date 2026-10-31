@@ -4,18 +4,19 @@
 
 **Hecho:** los cinco requisitos funcionales (técnicos y obras con datos de ejemplo, alta de
 visitas, las tres reglas, cancelación y listado con filtros), validación completa en el servidor,
-esquema y migraciones, seed, 39 tests de las reglas y, como extra, la sugerencia de la hora libre
-más cercana.
+esquema y migraciones, seed y 45 tests: los de las reglas y los de integración, que aplican las
+migraciones a un PostgreSQL en memoria. Como extras, la sugerencia de la hora libre más cercana y
+una agenda diaria con una columna por técnico.
 
 **Pendiente**, por orden de prioridad:
 
-- Autenticación y permisos (ahora cualquiera con la URL puede programar y cancelar).
+- Autenticación y permisos: ahora cualquiera con la URL puede programar y cancelar. Habría un rol
+  de planificación (todo) y otro de técnico (solo lectura de su agenda), con el permiso comprobado
+  en cada Server Action y no solo ocultando botones.
 - Reprogramar una visita (ahora se cancela y se crea otra) y alta/edición de técnicos y obras.
-- Vista de agenda diaria por técnico, más útil que una tabla para ver los huecos.
 - Tiempos de desplazamiento reales según el municipio de cada obra.
-- Tests automáticos de integración contra PostgreSQL y E2E. Las restricciones de la base de datos
-  las he comprobado con un script que inserta filas inválidas directamente, pero no está
-  automatizado.
+- Tests E2E en el navegador y una prueba automática de concurrencia. Dos altas simultáneas las he
+  probado a mano contra Neon; PGlite, el PostgreSQL de los tests, atiende una sola conexión.
 
 ## b) Decisiones principales
 
@@ -35,7 +36,12 @@ más cercana.
   ningún `Date` las desplaza cuando el servidor corre en UTC, como en Vercel.
 - **Drizzle + `pg`**: SQL explícito, migraciones versionadas y el mismo código con Neon, Supabase
   o un PostgreSQL local.
-- **Filtros en la URL**: el listado se puede enlazar y no necesita estado en el cliente.
+- **Filtros en la URL**: el listado y la agenda se pueden enlazar y no necesitan estado en el
+  cliente. La agenda es una rejilla CSS renderizada en el servidor, sin librería de calendario.
+- **Tests de integración con PGlite** (PostgreSQL compilado a WebAssembly): `npm test` aplica las
+  migraciones reales sin Docker ni base de datos externa. Uno de los tests prueba cientos de
+  visitas y comprueba que PostgreSQL acepta exactamente las mismas que `validateVisit`, así que
+  las dos implementaciones de las reglas no pueden divergir sin que falle.
 - **Extra, sugerir la hora libre más cercana**: el problema de partida es encontrar hueco a mano.
   Reutiliza la función de validación, así que no puede proponer una hora que luego se rechace.
 

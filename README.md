@@ -13,6 +13,8 @@ datos de ejemplo).
   mismo técnico en obras distintas; c) empezar y terminar entre las 08:00 y las 17:00.
 - **Cancelar**: la visita queda visible como *Cancelada* y su horario libre.
 - **Listado** ordenado por fecha y hora y filtrable por técnico y por fecha.
+- **Agenda del día**: una columna por técnico de 08:00 a 17:00. Al pulsar un hueco libre se abre el
+  formulario con el técnico, la fecha y la hora ya puestos.
 
 Las decisiones, los supuestos y lo que queda pendiente están en [DECISIONES.md](DECISIONES.md).
 
@@ -58,7 +60,7 @@ Requisitos: **Node.js 22.12 o superior** y una base de datos PostgreSQL (14 o su
 | --- | --- |
 | `npm run dev` | Servidor de desarrollo |
 | `npm run build` / `npm start` | Build de producción y servidor |
-| `npm test` | Tests de las reglas de planificación (Vitest) |
+| `npm test` | Tests de las reglas y de integración contra PostgreSQL en memoria (Vitest + PGlite; no necesita base de datos) |
 | `npm run typecheck` / `npm run lint` | Comprobación de tipos y ESLint |
 | `npm run db:migrate` | Aplica las migraciones de `drizzle/` |
 | `npm run db:seed` | Vacía y recarga los datos de ejemplo |
@@ -70,7 +72,7 @@ Requisitos: **Node.js 22.12 o superior** y una base de datos PostgreSQL (14 o su
 ```
 src/
   domain/   Reglas de planificación (funciones puras) y utilidades de hora, con sus tests
-  db/       Esquema de Drizzle, conexión, consultas y datos de ejemplo
+  db/       Esquema de Drizzle, conexión, consultas, datos de ejemplo y tests de integración
   app/      Páginas (App Router) y Server Actions de alta y cancelación
   lib/      Formato de fechas, parámetros de la URL y clases de estilo compartidas
 drizzle/    Migraciones SQL; la 0001 impone las tres reglas en PostgreSQL
