@@ -1,7 +1,16 @@
 @import "tailwindcss";
 
 @theme inline {
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-maven-pro);
+}
+
+/* Paleta inspirada en la web de Labocat. */
+@theme {
+  --color-brand-navy: #002144;
+  --color-brand-blue: #1e5677;
+  --color-brand-mint: #8de1c1;
+  --color-brand-slate: #3a4856;
+  --color-brand-surface: #f3f5f7;
 }
 
 :root {

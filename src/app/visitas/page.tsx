@@ -6,7 +6,7 @@ import { listTechnicians, listVisits, type VisitRow } from "@/db/queries";
 import { STATUS_LABELS, type VisitStatus } from "@/domain/scheduling";
 import { describeSlot } from "@/lib/format";
 import { parseDateParam, parseIdParam } from "@/lib/search-params";
-import { buttonPrimary, buttonSecondary, cardClass, inputClass, labelClass } from "@/lib/styles";
+import { buttonPrimary, buttonSecondary, cardClass, inputClass, labelClass, pageTitle } from "@/lib/styles";
 import { CancelVisitButton } from "./cancel-visit-button";
 
 export const metadata: Metadata = { title: "Visitas · Planificador de visitas" };
@@ -15,7 +15,7 @@ export default function VisitsPage({ searchParams }: PageProps<"/visitas">) {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold tracking-tight">Visitas</h1>
+        <h1 className={pageTitle}>Visitas</h1>
         <Link href="/visitas/nueva" className={buttonPrimary}>
           Programar visita
         </Link>
@@ -45,7 +45,7 @@ async function VisitsList({ searchParams }: Pick<PageProps<"/visitas">, "searchP
       {createdId !== undefined && rows.some((row) => row.id === createdId) && (
         <p
           role="status"
-          className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"
+          className="rounded-md border border-brand-mint bg-brand-mint/25 px-4 py-3 text-sm text-brand-navy"
         >
           Visita programada correctamente.
         </p>
@@ -123,7 +123,7 @@ function VisitsTable({ rows, highlightId }: { rows: VisitRow[]; highlightId?: nu
             return (
               <tr
                 key={row.id}
-                className={row.id === highlightId ? "bg-emerald-50" : cancelled ? "text-slate-400" : undefined}
+                className={row.id === highlightId ? "bg-brand-mint/20" : cancelled ? "text-slate-400" : undefined}
               >
                 <td className="whitespace-nowrap px-4 py-3">{slot.dateLabel}</td>
                 <td className="whitespace-nowrap px-4 py-3">
@@ -158,7 +158,7 @@ function VisitsTable({ rows, highlightId }: { rows: VisitRow[]; highlightId?: nu
 function StatusBadge({ status }: { status: VisitStatus }) {
   const style =
     status === "scheduled"
-      ? "bg-emerald-50 text-emerald-700 ring-emerald-600/20"
+      ? "bg-brand-mint/30 text-brand-navy ring-brand-mint"
       : "bg-slate-100 text-slate-500 ring-slate-400/20";
   return (
     <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${style}`}>

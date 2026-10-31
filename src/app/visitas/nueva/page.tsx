@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { listSites, listTechnicians } from "@/db/queries";
 import { parseDateParam, parseIdParam } from "@/lib/search-params";
+import { pageTitle } from "@/lib/styles";
 import { VisitForm } from "./visit-form";
 
 export const metadata: Metadata = { title: "Programar visita · Planificador de visitas" };
@@ -10,7 +11,7 @@ export default function NewVisitPage({ searchParams }: PageProps<"/visitas/nueva
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight">Programar visita</h1>
+        <h1 className={pageTitle}>Programar visita</h1>
         <p className="text-sm text-slate-600">
           La visita debe empezar y terminar entre las 08:00 y las 17:00, no puede solaparse con otra
           del mismo técnico y, si la visita anterior o la siguiente es en otra obra, tiene que haber al

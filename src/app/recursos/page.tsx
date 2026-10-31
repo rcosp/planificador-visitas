@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { listSites, listTechnicians } from "@/db/queries";
-import { cardClass } from "@/lib/styles";
+import { cardClass, pageTitle } from "@/lib/styles";
 
 export const metadata: Metadata = { title: "Técnicos y obras · Planificador de visitas" };
 
 export default function ResourcesPage() {
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Técnicos y obras</h1>
+      <h1 className={pageTitle}>Técnicos y obras</h1>
       <Suspense fallback={<p className="text-sm text-slate-500">Cargando…</p>}>
         <Resources />
       </Suspense>
@@ -22,7 +22,7 @@ async function Resources() {
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_2fr]">
       <section className="space-y-3">
-        <h2 className="text-lg font-medium">Técnicos ({technicians.length})</h2>
+        <h2 className="text-lg font-medium text-brand-navy">Técnicos ({technicians.length})</h2>
         <ul className={`${cardClass} divide-y divide-slate-100 text-sm`}>
           {technicians.map((technician) => (
             <li key={technician.id} className="flex justify-between gap-4 px-4 py-3">
@@ -34,7 +34,7 @@ async function Resources() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-medium">Obras ({sites.length})</h2>
+        <h2 className="text-lg font-medium text-brand-navy">Obras ({sites.length})</h2>
         <ul className={`${cardClass} divide-y divide-slate-100 text-sm`}>
           {sites.map((site) => (
             <li key={site.id} className="px-4 py-3">
