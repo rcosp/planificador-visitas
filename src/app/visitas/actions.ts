@@ -11,9 +11,10 @@ import {
   RULE_LABELS,
   type RuleCode,
   type RuleViolation,
+  suggestStart,
   validateVisit,
 } from "@/domain/scheduling";
-import { isValidDate, parseTime, toTimestamp } from "@/domain/time";
+import { formatMinutes, isValidDate, parseTime, toTimestamp } from "@/domain/time";
 
 // Las Server Actions son endpoints POST accesibles sin pasar por el
 // formulario, así que aquí se valida todo de nuevo, aunque el navegador ya
@@ -27,6 +28,8 @@ export interface CreateVisitState {
   values: VisitFormValues;
   fieldErrors?: Partial<Record<VisitField, string>>;
   violations?: RuleViolation[];
+  /** Hora libre más cercana ese día ("HH:MM"), o null si no cabe en ningún hueco. */
+  suggestedStartTime?: string | null;
 }
 
 const visitSchema = z.object({
@@ -83,8 +86,16 @@ export async function createVisit(
   const start = parseTime(startTime)!;
   const slot = { technicianId, siteId, date, start, end: start + durationMinutes };
 
-  const violations = validateVisit(slot, await getTechnicianAgenda(technicianId, date));
-  if (violations.length > 0) return { values, violations };
+  const agenda = await getTechnicianAgenda(technicianId, date);
+  const violations = validateVisit(slot, agenda);
+  if (violations.length > 0) {
+    const suggestion = suggestStart(slot, agenda);
+    return {
+      values,
+      violations,
+      suggestedStartTime: suggestion === null ? null : formatMinutes(suggestion),
+    };
+  }
 
   let visitId: number;
   try {

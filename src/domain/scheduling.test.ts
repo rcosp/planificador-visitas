@@ -3,9 +3,10 @@ import {
   type ExistingVisit,
   type RuleCode,
   type VisitSlot,
+  suggestStart,
   validateVisit,
 } from "./scheduling";
-import { parseTime } from "./time";
+import { formatMinutes, parseTime } from "./time";
 
 const DATE = "2026-11-03";
 const TECH = 1;
@@ -164,5 +165,41 @@ describe("varias reglas a la vez", () => {
       ["OVERLAP", overlapping.id],
       ["TRAVEL_TIME", tooClose.id],
     ]);
+  });
+});
+
+describe("sugerencia de hora libre", () => {
+  function suggested(candidate: VisitSlot, existing: ExistingVisit[]): string | null {
+    const start = suggestStart(candidate, existing);
+    return start === null ? null : formatMinutes(start);
+  }
+
+  it("propone la hora pedida si ya es válida", () => {
+    expect(suggested(slot("11:00", "12:00"), [visit("09:00", "10:00")])).toBe("11:00");
+  });
+
+  it("propone el primer hueco tras la visita que lo impide, en la misma obra sin margen", () => {
+    expect(suggested(slot("09:00", "10:00"), [visit("08:30", "10:00")])).toBe("10:00");
+  });
+
+  it("deja los 30 min de desplazamiento si la obra es distinta", () => {
+    expect(suggested(slot("09:00", "10:00", { siteId: SITE_B }), [visit("08:30", "10:00")])).toBe("10:30");
+  });
+
+  it("elige el hueco más cercano aunque sea antes de la hora pedida", () => {
+    expect(suggested(slot("10:15", "10:45"), [visit("10:00", "12:00")])).toBe("09:30");
+  });
+
+  it("ante un empate prefiere la hora más tardía", () => {
+    expect(suggested(slot("10:00", "11:00"), [visit("10:00", "11:00")])).toBe("11:00");
+  });
+
+  it("mete la visita dentro de la jornada", () => {
+    expect(suggested(slot("16:30", "17:30"), [])).toBe("16:00");
+  });
+
+  it("devuelve null si ese día no cabe", () => {
+    expect(suggested(slot("09:00", "10:00"), [visit("08:00", "17:00")])).toBeNull();
+    expect(suggested(slot("08:00", "17:30"), [])).toBeNull();
   });
 });

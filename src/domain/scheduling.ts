@@ -115,6 +115,36 @@ export function validateVisit(
   return violations;
 }
 
+export const SUGGESTION_STEP_MINUTES = 5;
+
+/**
+ * Hora de inicio más cercana a la pedida en la que la visita (mismo técnico,
+ * obra, día y duración) cumple todas las reglas, en pasos de 5 minutos dentro
+ * de la jornada. Ante un empate se prefiere la más tardía. Devuelve null si
+ * ese día no cabe en ningún hueco.
+ */
+export function suggestStart(
+  candidate: VisitSlot,
+  existing: readonly ExistingVisit[],
+): number | null {
+  const duration = candidate.end - candidate.start;
+  let best: number | null = null;
+  for (
+    let start = WORKDAY_START;
+    start + duration <= WORKDAY_END;
+    start += SUGGESTION_STEP_MINUTES
+  ) {
+    if (validateVisit({ ...candidate, start, end: start + duration }, existing).length > 0) {
+      continue;
+    }
+    // Se recorre en orden creciente, así que con <= gana la más tardía en un empate.
+    if (best === null || Math.abs(start - candidate.start) <= Math.abs(best - candidate.start)) {
+      best = start;
+    }
+  }
+  return best;
+}
+
 function workingHoursMessage(candidate: VisitSlot): string {
   const parts: string[] = [];
   if (candidate.start < WORKDAY_START) {

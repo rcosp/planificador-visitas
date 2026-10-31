@@ -43,6 +43,19 @@ export function VisitForm({ technicians, sites, initialValues }: Props) {
     className: inputClass,
   });
 
+  // La sugerencia vale para el técnico, la obra, el día y la duración que se
+  // enviaron; si se cambia alguno de ellos deja de mostrarse.
+  const suggestionApplies =
+    state.suggestedStartTime !== undefined &&
+    state.suggestedStartTime !== values.startTime &&
+    (["siteId", "technicianId", "date", "durationMinutes"] as const).every(
+      (field) => state.values[field] === values[field],
+    );
+
+  function applySuggestion(time: string) {
+    setValues((current) => ({ ...current, startTime: time }));
+  }
+
   const start = parseTime(values.startTime);
   const duration = Number(values.durationMinutes);
   const end = start !== null && Number.isInteger(duration) && duration > 0 ? start + duration : null;
@@ -59,6 +72,7 @@ export function VisitForm({ technicians, sites, initialValues }: Props) {
               </li>
             ))}
           </ul>
+          {suggestionApplies && <Suggestion time={state.suggestedStartTime} onUse={applySuggestion} />}
         </div>
       )}
 
@@ -131,6 +145,30 @@ export function VisitForm({ technicians, sites, initialValues }: Props) {
         </Link>
       </div>
     </form>
+  );
+}
+
+function Suggestion({ time, onUse }: { time?: string | null; onUse: (time: string) => void }) {
+  if (!time) {
+    return (
+      <p className="mt-3 border-t border-red-200 pt-3">
+        Ese día no queda ningún hueco de esa duración para este técnico.
+      </p>
+    );
+  }
+  return (
+    <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-red-200 pt-3">
+      <span>
+        La hora libre más cercana para este técnico ese día es a las <strong>{time}</strong>.
+      </span>
+      <button
+        type="button"
+        onClick={() => onUse(time)}
+        className="rounded-md border border-red-300 bg-white px-3 py-1 text-sm font-medium text-red-900 hover:bg-red-100"
+      >
+        Usar las {time}
+      </button>
+    </p>
   );
 }
 
