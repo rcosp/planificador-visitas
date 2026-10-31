@@ -44,6 +44,12 @@ export function fromTimestamp(value: string): { date: string; minutes: number } 
   return { date: match[1], minutes: Number(match[2]) * 60 + Number(match[3]) };
 }
 
+/** Fecha de hoy (YYYY-MM-DD) en la zona horaria de la empresa; la única que mira el reloj. */
+export function today(): string {
+  // en-CA formatea como YYYY-MM-DD
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Madrid" }).format(new Date());
+}
+
 /** Suma días a una fecha YYYY-MM-DD. */
 export function addDays(date: string, days: number): string {
   const [y, m, d] = date.split("-").map(Number);

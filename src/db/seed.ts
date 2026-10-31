@@ -5,7 +5,7 @@
 import { loadEnvConfig } from "@next/env";
 import { sql } from "drizzle-orm";
 import { type ExistingVisit, validateVisit } from "../domain/scheduling";
-import { addDays, parseTime, toTimestamp } from "../domain/time";
+import { addDays, parseTime, toTimestamp, today } from "../domain/time";
 import { closeDb, getDb } from "./client";
 import { sites, technicians, visits } from "./schema";
 
@@ -59,11 +59,6 @@ const VISITS: SeedVisit[] = [
   [2, 1, 2, "09:00", 60],
 ];
 
-function todayInMadrid(): string {
-  // en-CA formatea como YYYY-MM-DD
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Madrid" }).format(new Date());
-}
-
 function isWeekend(date: string): boolean {
   const day = new Date(`${date}T00:00:00Z`).getUTCDay();
   return day === 0 || day === 6;
@@ -81,7 +76,7 @@ function workday(firstWorkday: string, offset: number): string {
 }
 
 async function main() {
-  let firstWorkday = todayInMadrid();
+  let firstWorkday = today();
   while (isWeekend(firstWorkday)) firstWorkday = addDays(firstWorkday, 1);
 
   try {

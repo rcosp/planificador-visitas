@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { listSites, listTechnicians } from "@/db/queries";
-import { parseDateParam, parseIdParam } from "@/lib/search-params";
+import { parseDateParam, parseIdParam, parseTimeParam } from "@/lib/search-params";
 import { pageTitle } from "@/lib/styles";
 import { VisitForm } from "./visit-form";
 
@@ -37,7 +37,7 @@ async function VisitFormLoader({ searchParams }: Pick<PageProps<"/visitas/nueva"
         siteId: "",
         technicianId: String(parseIdParam(params.tecnico) ?? ""),
         date: parseDateParam(params.fecha) ?? "",
-        startTime: "09:00",
+        startTime: parseTimeParam(params.hora) ?? "09:00",
         durationMinutes: "60",
       }}
     />

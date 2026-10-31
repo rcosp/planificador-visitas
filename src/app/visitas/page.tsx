@@ -87,6 +87,14 @@ async function VisitsList({ searchParams }: Pick<PageProps<"/visitas">, "searchP
       <p className="text-sm text-slate-600">
         {rows.length === 1 ? "1 visita" : `${rows.length} visitas`} · {scheduledCount}{" "}
         {scheduledCount === 1 ? "programada" : "programadas"}
+        {date && (
+          <>
+            {" · "}
+            <Link href={`/agenda?fecha=${date}`} className="font-medium text-brand-blue hover:underline">
+              Ver el día en la agenda
+            </Link>
+          </>
+        )}
       </p>
 
       {rows.length === 0 ? (

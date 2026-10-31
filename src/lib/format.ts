@@ -13,6 +13,19 @@ export function formatDate(date: string): string {
   return dateFormatter.format(new Date(`${date}T00:00:00Z`));
 }
 
+const longDateFormatter = new Intl.DateTimeFormat("es-ES", {
+  weekday: "long",
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+  timeZone: "UTC",
+});
+
+/** "2026-11-03" -> "martes, 3 de noviembre de 2026". */
+export function formatLongDate(date: string): string {
+  return longDateFormatter.format(new Date(`${date}T00:00:00Z`));
+}
+
 /** 90 -> "1 h 30 min". */
 export function formatDuration(minutes: number): string {
   const h = Math.floor(minutes / 60);

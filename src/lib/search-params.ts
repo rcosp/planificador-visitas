@@ -1,4 +1,4 @@
-import { isValidDate } from "@/domain/time";
+import { isValidDate, parseTime } from "@/domain/time";
 
 type SearchParamValue = string | string[] | undefined;
 
@@ -17,4 +17,9 @@ export function parseIdParam(value: SearchParamValue): number | undefined {
 export function parseDateParam(value: SearchParamValue): string | undefined {
   const raw = single(value);
   return raw && isValidDate(raw) ? raw : undefined;
+}
+
+export function parseTimeParam(value: SearchParamValue): string | undefined {
+  const raw = single(value);
+  return raw && parseTime(raw) !== null ? raw : undefined;
 }

@@ -51,6 +51,20 @@ export async function listVisits({ technicianId, date }: VisitFilters) {
     .orderBy(asc(visits.startsAt), asc(technicians.name));
 }
 
+/** Primer día posterior a `date` con alguna visita programada, o null si no hay. */
+export async function findNextVisitDate(date: string): Promise<string | null> {
+  await connection();
+  const [row] = await getDb()
+    .select({ startsAt: visits.startsAt })
+    .from(visits)
+    .where(
+      and(eq(visits.status, "scheduled"), gte(visits.startsAt, `${addDays(date, 1)} 00:00:00`)),
+    )
+    .orderBy(asc(visits.startsAt))
+    .limit(1);
+  return row ? fromTimestamp(row.startsAt).date : null;
+}
+
 /** Visitas de un técnico en un día, en el formato que esperan las reglas. */
 export async function getTechnicianAgenda(
   technicianId: number,
