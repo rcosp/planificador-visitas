@@ -1,36 +1,83 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Planificador de visitas
 
-## Getting Started
+Primera versión de una aplicación web para planificar las visitas de los técnicos a las obras sin
+solapes ni falta de tiempo para desplazarse.
 
-First, run the development server:
+- **Programar una visita** (obra, técnico, fecha, hora de inicio y duración). Solo se guarda si
+  cumple las tres reglas; si no, se indica qué regla falla y con qué visita choca, y se propone la
+  hora libre más cercana.
+- **Reglas**: a) sin solapes con otra visita del técnico; b) al menos 30 min entre dos visitas del
+  mismo técnico en obras distintas; c) empezar y terminar entre las 08:00 y las 17:00.
+- **Cancelar**: la visita queda visible como *Cancelada* y su horario libre.
+- **Listado** ordenado por fecha y hora y filtrable por técnico y por fecha.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+Las decisiones, los supuestos y lo que queda pendiente están en [DECISIONES.md](DECISIONES.md).
+
+**Stack:** Next.js 16 (App Router, Server Actions) · TypeScript · PostgreSQL · Drizzle ORM ·
+Zod · Tailwind CSS · Vitest.
+
+## Ejecutar en local
+
+Requisitos: **Node.js 22.12 o superior** y una base de datos PostgreSQL (14 o superior).
+
+1. Instala las dependencias:
+
+   ```bash
+   npm install
+   ```
+
+2. Prepara la base de datos con **una** de estas opciones:
+
+   - **Docker**: `docker compose up -d` y copia `.env.example` a `.env.local` sin cambios.
+   - **Neon o Supabase** (gratis, sin instalar nada): crea un proyecto, copia `.env.example` a
+     `.env.local` y pon en `DATABASE_URL` la cadena de conexión del proyecto.
+
+   En Windows, `copy .env.example .env.local`; en macOS/Linux, `cp .env.example .env.local`.
+
+3. Crea las tablas y carga los datos de ejemplo (4 técnicos, 7 obras y una veintena de visitas
+   repartidas en los próximos días laborables):
+
+   ```bash
+   npm run db:setup
+   ```
+
+4. Arranca la aplicación y abre <http://localhost:3000>:
+
+   ```bash
+   npm run dev
+   ```
+
+`npm run db:seed` vacía las tablas y vuelve a cargar los datos de ejemplo cuando quieras.
+
+## Scripts
+
+| Script | Qué hace |
+| --- | --- |
+| `npm run dev` | Servidor de desarrollo |
+| `npm run build` / `npm start` | Build de producción y servidor |
+| `npm test` | Tests de las reglas de planificación (Vitest) |
+| `npm run typecheck` / `npm run lint` | Comprobación de tipos y ESLint |
+| `npm run db:migrate` | Aplica las migraciones de `drizzle/` |
+| `npm run db:seed` | Vacía y recarga los datos de ejemplo |
+| `npm run db:setup` | Migraciones + datos de ejemplo |
+| `npm run db:generate` | Genera una migración a partir de `src/db/schema.ts` |
+
+## Estructura
+
+```
+src/
+  domain/   Reglas de planificación (funciones puras) y utilidades de hora, con sus tests
+  db/       Esquema de Drizzle, conexión, consultas y datos de ejemplo
+  app/      Páginas (App Router) y Server Actions de alta y cancelación
+  lib/      Formato de fechas, parámetros de la URL y clases de estilo compartidas
+drizzle/    Migraciones SQL; la 0001 impone las tres reglas en PostgreSQL
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Despliegue (Vercel + Neon)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Crea la base de datos en Neon y ejecuta en local `npm run db:setup` con su cadena de conexión
+   en `.env.local`.
+2. Importa el repositorio en Vercel y añade la variable de entorno `DATABASE_URL` con la misma
+   cadena. No hace falta más configuración.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Ninguna credencial se guarda en el repositorio: `.env*` está en `.gitignore` salvo `.env.example`.

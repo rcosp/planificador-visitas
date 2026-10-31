@@ -1,0 +1,15 @@
+# PostgreSQL local para desarrollo. No usa contraseña: solo escucha en
+# 127.0.0.1, así que no es accesible desde fuera de la máquina.
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: planificador
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
