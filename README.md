@@ -3,6 +3,9 @@
 Primera versión de una aplicación web para planificar las visitas de los técnicos a las obras sin
 solapes ni falta de tiempo para desplazarse.
 
+**Aplicación publicada:** <https://planificador-visitas-nine.vercel.app/> (Vercel + Neon, con los
+datos de ejemplo).
+
 - **Programar una visita** (obra, técnico, fecha, hora de inicio y duración). Solo se guarda si
   cumple las tres reglas; si no, se indica qué regla falla y con qué visita choca, y se propone la
   hora libre más cercana.
