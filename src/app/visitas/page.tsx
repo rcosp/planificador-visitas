@@ -102,7 +102,9 @@ async function VisitsList({ searchParams }: Pick<PageProps<"/visitas">, "searchP
 
 function VisitsTable({ rows, highlightId }: { rows: VisitRow[]; highlightId?: number }) {
   return (
-    <div className={`${cardClass} overflow-x-auto`}>
+    // relative: sin él, el texto sr-only de la cabecera (posición absoluta) se
+    // sale del contenedor con scroll y ensancha la página en móvil.
+    <div className={`${cardClass} relative overflow-x-auto`}>
       <table className="w-full min-w-[720px] text-left text-sm">
         <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
           <tr>
