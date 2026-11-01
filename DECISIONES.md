@@ -13,7 +13,11 @@ una agenda diaria con una columna por técnico.
 - Autenticación y permisos: ahora cualquiera con la URL puede programar y cancelar. Habría un rol
   de planificación (todo) y otro de técnico (solo lectura de su agenda), con el permiso comprobado
   en cada Server Action y no solo ocultando botones.
-- Reprogramar una visita (ahora se cancela y se crea otra) y alta/edición de técnicos y obras.
+- Reprogramar una visita (ahora se cancela y se crea otra).
+- Alta, edición y baja de técnicos y obras (ahora vienen del seed). La baja sería lógica, con una
+  columna `activo`, porque las visitas los referencian y el historial no debe perderse. No se
+  podría dar de baja a un técnico ni una obra con visitas futuras programadas sin antes cancelarlas
+  o reasignarlas.
 - Tiempos de desplazamiento reales según el municipio de cada obra.
 - Tests E2E en el navegador y una prueba automática de concurrencia. Dos altas simultáneas las he
   probado a mano contra Neon; PGlite, el PostgreSQL de los tests, atiende una sola conexión.
