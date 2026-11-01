@@ -1,3 +1,45 @@
+PLANIFICADOR DE VISITAS
+=======================
+
+Aplicación web para planificar las visitas de los técnicos a las obras sin solapes ni falta de
+tiempo para desplazarse.
+
+Aplicación publicada: https://planificador-visitas-nine.vercel.app/
+
+
+EJECUTAR EN LOCAL
+-----------------
+
+Requisitos: Node.js 22.12 o superior y una base de datos PostgreSQL (14 o superior).
+
+1. Instala las dependencias:
+
+       npm install
+
+2. Prepara la base de datos con una de estas opciones:
+
+   - Docker: ejecuta "docker compose up -d" y copia .env.example a .env.local sin cambios.
+   - Neon o Supabase (gratis, sin instalar nada): crea un proyecto, copia .env.example a
+     .env.local y pon en DATABASE_URL la cadena de conexión del proyecto.
+
+   Para copiar el fichero: en Windows, "copy .env.example .env.local"; en macOS/Linux,
+   "cp .env.example .env.local".
+
+3. Crea las tablas y carga los datos de ejemplo (4 técnicos, 7 obras y una veintena de visitas):
+
+       npm run db:setup
+
+4. Arranca la aplicación y abre http://localhost:3000 :
+
+       npm run dev
+
+Los tests se ejecutan con "npm test" y no necesitan base de datos. Ninguna credencial se guarda en
+el repositorio: .env* está en .gitignore salvo .env.example.
+
+
+EXPLICACIÓN
+-----------
+
 a) Qué he hecho y qué queda pendiente
 
 Hecho: los cinco requisitos, con validación completa en el servidor, migraciones, seed y 46 tests
