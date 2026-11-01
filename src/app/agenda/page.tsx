@@ -119,7 +119,8 @@ async function AgendaDay({ searchParams }: Pick<PageProps<"/agenda">, "searchPar
           )}
         </p>
         <p className="text-sm text-slate-500">
-          Pulsa un hueco libre para programar una visita a esa hora.
+          Pulsa un hueco libre para programar una visita a esa hora, o una visita para
+          reprogramarla.
         </p>
       </div>
 
@@ -227,8 +228,8 @@ function TechnicianColumn({
         return (
           <Link
             key={visit.id}
-            href={`/visitas?tecnico=${technician.id}&fecha=${date}`}
-            title={`${timeLabel} · ${visit.siteName} (${visit.municipality})`}
+            href={`/visitas/${visit.id}/reprogramar`}
+            title={`${timeLabel} · ${visit.siteName} (${visit.municipality}) · Pulsa para reprogramar`}
             className="absolute inset-x-1 overflow-hidden rounded-md border-l-4 border-brand-blue bg-brand-mint/45 px-2 py-1 text-xs leading-4 text-brand-navy shadow-sm hover:bg-brand-mint/70"
             style={{
               top: percent(start - WORKDAY_START),
@@ -239,6 +240,7 @@ function TechnicianColumn({
             <span className="block font-semibold tabular-nums">{timeLabel}</span>
             <span className="block truncate">{visit.siteName}</span>
             <span className="block truncate text-slate-600">{visit.municipality}</span>
+            <span className="sr-only">. Reprogramar</span>
           </Link>
         );
       })}

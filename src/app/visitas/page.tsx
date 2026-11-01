@@ -32,6 +32,8 @@ async function VisitsList({ searchParams }: Pick<PageProps<"/visitas">, "searchP
   const technicianId = parseIdParam(params.tecnico);
   const date = parseDateParam(params.fecha);
   const createdId = parseIdParam(params.creada);
+  const rescheduledId = parseIdParam(params.reprogramada);
+  const savedId = createdId ?? rescheduledId;
 
   const [technicians, rows] = await Promise.all([
     listTechnicians(),
@@ -42,12 +44,14 @@ async function VisitsList({ searchParams }: Pick<PageProps<"/visitas">, "searchP
 
   return (
     <div className="space-y-4">
-      {createdId !== undefined && rows.some((row) => row.id === createdId) && (
+      {savedId !== undefined && rows.some((row) => row.id === savedId) && (
         <p
           role="status"
           className="rounded-md border border-brand-mint bg-brand-mint/25 px-4 py-3 text-sm text-brand-navy"
         >
-          Visita programada correctamente.
+          {createdId !== undefined
+            ? "Visita programada correctamente."
+            : "Visita reprogramada correctamente."}
         </p>
       )}
 
@@ -102,7 +106,7 @@ async function VisitsList({ searchParams }: Pick<PageProps<"/visitas">, "searchP
           No hay visitas {isFiltered ? "con estos filtros" : "todavía"}.
         </div>
       ) : (
-        <VisitsTable rows={rows} highlightId={createdId} />
+        <VisitsTable rows={rows} highlightId={savedId} />
       )}
     </div>
   );
@@ -150,10 +154,18 @@ function VisitsTable({ rows, highlightId }: { rows: VisitRow[]; highlightId?: nu
                 </td>
                 <td className="px-4 py-3 text-right">
                   {!cancelled && (
-                    <CancelVisitButton
-                      visitId={row.id}
-                      description={`de ${row.technicianName} en ${row.siteName} (${slot.dateLabel}, ${slot.timeLabel})`}
-                    />
+                    <div className="flex items-start justify-end gap-1">
+                      <Link
+                        href={`/visitas/${row.id}/reprogramar`}
+                        className="rounded-md px-2 py-1 text-sm font-medium text-brand-blue hover:bg-slate-100"
+                      >
+                        Reprogramar
+                      </Link>
+                      <CancelVisitButton
+                        visitId={row.id}
+                        description={`de ${row.technicianName} en ${row.siteName} (${slot.dateLabel}, ${slot.timeLabel})`}
+                      />
+                    </div>
                   )}
                 </td>
               </tr>

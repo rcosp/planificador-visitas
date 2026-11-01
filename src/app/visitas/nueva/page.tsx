@@ -3,7 +3,8 @@ import { Suspense } from "react";
 import { listSites, listTechnicians } from "@/db/queries";
 import { parseDateParam, parseIdParam, parseTimeParam } from "@/lib/search-params";
 import { pageTitle } from "@/lib/styles";
-import { VisitForm } from "./visit-form";
+import { createVisit } from "../actions";
+import { VisitForm } from "../visit-form";
 
 export const metadata: Metadata = { title: "Programar visita · Planificador de visitas" };
 
@@ -31,6 +32,8 @@ async function VisitFormLoader({ searchParams }: Pick<PageProps<"/visitas/nueva"
 
   return (
     <VisitForm
+      action={createVisit}
+      submitLabel="Programar visita"
       technicians={technicians.map(({ id, name }) => ({ id, name }))}
       sites={sites.map(({ id, name, municipality }) => ({ id, name, municipality }))}
       initialValues={{

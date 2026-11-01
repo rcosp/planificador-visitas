@@ -12,18 +12,21 @@ import {
 import { RULE_LABELS } from "@/domain/scheduling";
 import { formatMinutes, parseTime } from "@/domain/time";
 import { buttonPrimary, buttonSecondary, cardClass, inputClass, labelClass } from "@/lib/styles";
-import { createVisit, type VisitField, type VisitFormValues } from "../actions";
+import type { VisitField, VisitFormState, VisitFormValues } from "./actions";
 
 const subscribeNothing = () => () => {};
 
 interface Props {
+  /** createVisit, o rescheduleVisit con el id de la visita ya enlazado. */
+  action: (state: VisitFormState, formData: FormData) => Promise<VisitFormState>;
+  submitLabel: string;
   technicians: { id: number; name: string }[];
   sites: { id: number; name: string; municipality: string }[];
   initialValues: VisitFormValues;
 }
 
-export function VisitForm({ technicians, sites, initialValues }: Props) {
-  const [state, formAction, pending] = useActionState(createVisit, { values: initialValues });
+export function VisitForm({ action, submitLabel, technicians, sites, initialValues }: Props) {
+  const [state, formAction, pending] = useActionState(action, { values: initialValues });
   // Campos controlados: conservan lo escrito cuando el servidor rechaza la visita.
   const [values, setValues] = useState(initialValues);
 
@@ -75,6 +78,11 @@ export function VisitForm({ technicians, sites, initialValues }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className={`${cardClass} space-y-5 p-6`}>
+      {state.formError && (
+        <p role="alert" className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-900">
+          {state.formError}
+        </p>
+      )}
       {state.violations && state.violations.length > 0 && (
         <div role="alert" className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-900">
           <p className="font-medium">No se puede guardar la visita porque no cumple estas reglas:</p>
@@ -151,7 +159,7 @@ export function VisitForm({ technicians, sites, initialValues }: Props) {
 
       <div className="flex flex-wrap gap-3 border-t border-slate-100 pt-5">
         <button type="submit" disabled={pending || !hydrated} className={buttonPrimary}>
-          {pending ? "Guardando…" : "Programar visita"}
+          {pending ? "Guardando…" : submitLabel}
         </button>
         <Link href="/visitas" className={buttonSecondary}>
           Volver al listado

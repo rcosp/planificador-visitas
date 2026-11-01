@@ -8,7 +8,12 @@ import { getDb } from "@/db/client";
 import { constraintViolation } from "@/db/errors";
 import { getTechnicianAgenda } from "@/db/queries";
 import { sites, technicians, visits } from "@/db/schema";
-import { type RuleViolation, suggestStart, validateVisit } from "@/domain/scheduling";
+import {
+  type RuleViolation,
+  suggestStart,
+  validateVisit,
+  type VisitSlot,
+} from "@/domain/scheduling";
 import { formatMinutes, isValidDate, parseTime, toTimestamp } from "@/domain/time";
 
 // Las Server Actions son endpoints POST accesibles sin pasar por el
@@ -19,8 +24,10 @@ const FIELDS = ["siteId", "technicianId", "date", "startTime", "durationMinutes"
 export type VisitField = (typeof FIELDS)[number];
 export type VisitFormValues = Record<VisitField, string>;
 
-export interface CreateVisitState {
+export interface VisitFormState {
   values: VisitFormValues;
+  /** Error que no es de un campo ni de una regla (p. ej., la visita ya no existe). */
+  formError?: string;
   fieldErrors?: Partial<Record<VisitField, string>>;
   violations?: RuleViolation[];
   /** Hora libre más cercana ese día ("HH:MM"), o null si no cabe en ningún hueco. */
@@ -44,22 +51,34 @@ const visitSchema = z.object({
     .max(24 * 60, "La duración no puede superar un día."),
 });
 
-export async function createVisit(
-  _previous: CreateVisitState,
-  formData: FormData,
-): Promise<CreateVisitState> {
-  const values = Object.fromEntries(
+const visitIdSchema = z.number().int().positive();
+
+function readValues(formData: FormData): VisitFormValues {
+  return Object.fromEntries(
     FIELDS.map((field) => [field, String(formData.get(field) ?? "").trim()]),
   ) as VisitFormValues;
+}
+
+type CheckedVisit =
+  | { ok: true; values: VisitFormValues; slot: VisitSlot }
+  | { ok: false; state: VisitFormState };
+
+/**
+ * Valida el formulario de una visita nueva o reprogramada: formato, que
+ * existan el técnico y la obra, y las tres reglas frente a la agenda del
+ * técnico. Al reprogramar, `visitId` es la propia visita, que no cuenta.
+ */
+async function checkVisit(formData: FormData, visitId?: number): Promise<CheckedVisit> {
+  const values = readValues(formData);
 
   const parsed = visitSchema.safeParse(values);
   if (!parsed.success) {
-    const fieldErrors: CreateVisitState["fieldErrors"] = {};
+    const fieldErrors: VisitFormState["fieldErrors"] = {};
     for (const issue of parsed.error.issues) {
       const field = issue.path[0] as VisitField;
       fieldErrors[field] ??= issue.message;
     }
-    return { values, fieldErrors };
+    return { ok: false, state: { values, fieldErrors } };
   }
 
   const { siteId, technicianId, date, startTime, durationMinutes } = parsed.data;
@@ -70,10 +89,13 @@ export async function createVisit(
   ]);
   if (technician.length === 0 || site.length === 0) {
     return {
-      values,
-      fieldErrors: {
-        ...(technician.length === 0 && { technicianId: "El técnico no existe." }),
-        ...(site.length === 0 && { siteId: "La obra no existe." }),
+      ok: false,
+      state: {
+        values,
+        fieldErrors: {
+          ...(technician.length === 0 && { technicianId: "El técnico no existe." }),
+          ...(site.length === 0 && { siteId: "La obra no existe." }),
+        },
       },
     };
   }
@@ -81,27 +103,47 @@ export async function createVisit(
   const start = parseTime(startTime)!;
   const slot = { technicianId, siteId, date, start, end: start + durationMinutes };
 
-  const agenda = await getTechnicianAgenda(technicianId, date);
+  const agenda = (await getTechnicianAgenda(technicianId, date)).filter(
+    (visit) => visit.id !== visitId,
+  );
   const violations = validateVisit(slot, agenda);
   if (violations.length > 0) {
     const suggestion = suggestStart(slot, agenda);
     return {
-      values,
-      violations,
-      suggestedStartTime: suggestion === null ? null : formatMinutes(suggestion),
+      ok: false,
+      state: {
+        values,
+        violations,
+        suggestedStartTime: suggestion === null ? null : formatMinutes(suggestion),
+      },
     };
   }
+
+  return { ok: true, values, slot };
+}
+
+function slotColumns(slot: VisitSlot) {
+  return {
+    technicianId: slot.technicianId,
+    siteId: slot.siteId,
+    startsAt: toTimestamp(slot.date, slot.start),
+    endsAt: toTimestamp(slot.date, slot.end),
+  };
+}
+
+export async function createVisit(
+  _previous: VisitFormState,
+  formData: FormData,
+): Promise<VisitFormState> {
+  const checked = await checkVisit(formData);
+  if (!checked.ok) return checked.state;
+  const { values, slot } = checked;
 
   let visitId: number;
   try {
     const [row] = await getDb()
       .insert(visits)
-      .values({
-        technicianId,
-        siteId,
-        startsAt: toTimestamp(date, slot.start),
-        endsAt: toTimestamp(date, slot.end),
-      })
+      .values(slotColumns(slot))
       .returning({ id: visits.id });
     visitId = row.id;
   } catch (error) {
@@ -111,11 +153,52 @@ export async function createVisit(
   }
 
   revalidatePath("/visitas");
-  redirect(`/visitas?tecnico=${technicianId}&fecha=${date}&creada=${visitId}`);
+  redirect(`/visitas?tecnico=${slot.technicianId}&fecha=${slot.date}&creada=${visitId}`);
+}
+
+const NOT_RESCHEDULABLE = "La visita no existe o está cancelada, así que no se puede reprogramar.";
+
+/** Cambia la obra, el técnico, el día, la hora o la duración de una visita programada. */
+export async function rescheduleVisit(
+  visitId: number,
+  _previous: VisitFormState,
+  formData: FormData,
+): Promise<VisitFormState> {
+  if (!visitIdSchema.safeParse(visitId).success) throw new Error("Visita no válida.");
+
+  const [current] = await getDb()
+    .select({ status: visits.status })
+    .from(visits)
+    .where(eq(visits.id, visitId));
+  if (current?.status !== "scheduled") {
+    return { values: readValues(formData), formError: NOT_RESCHEDULABLE };
+  }
+
+  const checked = await checkVisit(formData, visitId);
+  if (!checked.ok) return checked.state;
+  const { values, slot } = checked;
+
+  try {
+    // Las restricciones de la base de datos no comparan la fila consigo
+    // misma, así que la visita puede moverse dentro de su propio horario.
+    const updated = await getDb()
+      .update(visits)
+      .set(slotColumns(slot))
+      .where(and(eq(visits.id, visitId), eq(visits.status, "scheduled")))
+      .returning({ id: visits.id });
+    if (updated.length === 0) return { values, formError: NOT_RESCHEDULABLE };
+  } catch (error) {
+    const violation = constraintViolation(error);
+    if (violation) return { values, violations: [violation] };
+    throw error;
+  }
+
+  revalidatePath("/visitas");
+  redirect(`/visitas?tecnico=${slot.technicianId}&fecha=${slot.date}&reprogramada=${visitId}`);
 }
 
 export async function cancelVisit(visitId: number): Promise<{ error?: string }> {
-  const id = z.number().int().positive().safeParse(visitId);
+  const id = visitIdSchema.safeParse(visitId);
   if (!id.success) return { error: "Visita no válida." };
 
   const updated = await getDb()

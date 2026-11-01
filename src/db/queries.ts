@@ -51,6 +51,28 @@ export async function listVisits({ technicianId, date }: VisitFilters) {
     .orderBy(asc(visits.startsAt), asc(technicians.name));
 }
 
+/** Una visita con los nombres del técnico y la obra, o null si no existe. */
+export async function getVisit(id: number) {
+  await connection();
+  const [row] = await getDb()
+    .select({
+      id: visits.id,
+      technicianId: visits.technicianId,
+      siteId: visits.siteId,
+      startsAt: visits.startsAt,
+      endsAt: visits.endsAt,
+      status: visits.status,
+      technicianName: technicians.name,
+      siteName: sites.name,
+      municipality: sites.municipality,
+    })
+    .from(visits)
+    .innerJoin(technicians, eq(visits.technicianId, technicians.id))
+    .innerJoin(sites, eq(visits.siteId, sites.id))
+    .where(eq(visits.id, id));
+  return row ?? null;
+}
+
 /** Primer día posterior a `date` con alguna visita programada, o null si no hay. */
 export async function findNextVisitDate(date: string): Promise<string | null> {
   await connection();

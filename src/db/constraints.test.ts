@@ -100,6 +100,20 @@ describe("restricciones de PostgreSQL", () => {
       await rejectedBy(db.update(visits).set({ status: "scheduled" }).where(eq(visits.id, cancelled))),
     ).toBe("OVERLAP");
   });
+
+  it("una visita se puede reprogramar sobre su propio horario, pero no encima de otra", async () => {
+    const visit = await insertVisit(ANA, OBRA_A, "09:00", "10:00");
+    await insertVisit(ANA, OBRA_A, "11:00", "12:00");
+    const reschedule = (siteId: number, from: string, to: string) =>
+      db
+        .update(visits)
+        .set({ siteId, startsAt: `${DAY} ${from}:00`, endsAt: `${DAY} ${to}:00` })
+        .where(eq(visits.id, visit));
+
+    expect(await rejectedBy(reschedule(OBRA_A, "09:30", "10:30"))).toBeNull();
+    expect(await rejectedBy(reschedule(OBRA_A, "10:30", "11:30"))).toBe("OVERLAP");
+    expect(await rejectedBy(reschedule(OBRA_B, "09:45", "10:45"))).toBe("TRAVEL_TIME");
+  });
 });
 
 describe("PostgreSQL y validateVisit", () => {
