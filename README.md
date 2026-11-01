@@ -12,6 +12,8 @@ datos de ejemplo).
 - **Reglas**: a) sin solapes con otra visita del técnico; b) al menos 30 min entre dos visitas del
   mismo técnico en obras distintas; c) empezar y terminar entre las 08:00 y las 17:00.
 - **Cancelar**: la visita queda visible como *Cancelada* y su horario libre.
+- **Reprogramar**: cambiar la obra, el técnico, el día, la hora o la duración de una visita
+  programada, con las mismas reglas. Se abre desde el listado o pulsando la visita en la agenda.
 - **Listado** ordenado por fecha y hora y filtrable por técnico y por fecha.
 - **Agenda del día**: una columna por técnico de 08:00 a 17:00. Al pulsar un hueco libre se abre el
   formulario con el técnico, la fecha y la hora ya puestos.

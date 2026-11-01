@@ -4,16 +4,16 @@
 
 **Hecho:** los cinco requisitos funcionales (técnicos y obras con datos de ejemplo, alta de
 visitas, las tres reglas, cancelación y listado con filtros), validación completa en el servidor,
-esquema y migraciones, seed y 45 tests: los de las reglas y los de integración, que aplican las
-migraciones a un PostgreSQL en memoria. Como extras, la sugerencia de la hora libre más cercana y
-una agenda diaria con una columna por técnico.
+esquema y migraciones, seed y 46 tests: los de las reglas y los de integración, que aplican las
+migraciones a un PostgreSQL en memoria. Como extras, la sugerencia de la hora libre más cercana,
+una agenda diaria con una columna por técnico y reprogramar visitas (la propia visita no cuenta
+como conflicto, ni en la aplicación ni en PostgreSQL).
 
 **Pendiente**, por orden de prioridad:
 
 - Autenticación y permisos: ahora cualquiera con la URL puede programar y cancelar. Habría un rol
   de planificación (todo) y otro de técnico (solo lectura de su agenda), con el permiso comprobado
   en cada Server Action y no solo ocultando botones.
-- Reprogramar una visita (ahora se cancela y se crea otra).
 - Alta, edición y baja de técnicos y obras (ahora vienen del seed). La baja sería lógica, con una
   columna `activo`, porque las visitas los referencian y el historial no debe perderse. No se
   podría dar de baja a un técnico ni una obra con visitas futuras programadas sin antes cancelarlas
@@ -59,7 +59,7 @@ una agenda diaria con una columna por técnico.
   de la última.
 - El desplazamiento es siempre de 30 min, sea cual sea el municipio.
 - Los intervalos son semiabiertos: terminar a las 10:00 y empezar a las 10:00 no es un solape.
-- Cancelar es definitivo. Reactivar una visita exigiría volver a validarla.
+- Cancelar es definitivo: una visita cancelada no se reactiva ni se reprograma; se programa otra.
 - El filtro por fecha es un día concreto. Las duraciones son minutos enteros.
 
 ## d) Uso de la IA
